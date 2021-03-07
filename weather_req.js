@@ -55,6 +55,7 @@ module.exports = {
             return null;
         }
         return {
+            "cityId": response.id,
             "cityName": response.name,
             "temp": Math.round(response.main.temp * 10) / 10,
             "feels_like": response.main.feels_like,
