@@ -32,10 +32,8 @@ function findCityRespond(source, res) {
 
 function addFavourite(col, state, res, err, result) {
     if (result) {
-        console.log("Found one --> already contained");
         res.sendStatus(404);
     } else {
-        console.log("Couldn't find --> adding one");
         col.insertOne(state, function(err, result){
             if (err) {
                 console.log(err);
@@ -47,11 +45,9 @@ function addFavourite(col, state, res, err, result) {
 
 function deleteFavourite(col, state, res, err, result) {
     if (result) {
-        console.log("Found one -> return it");
         col.deleteOne(result);
         res.sendStatus(200);
     } else {
-        console.log("Couldn't find --> error");
         res.sendStatus(404);
     }
 }
@@ -60,7 +56,7 @@ function favouriteCityRespond(source, res, toAdd) {
     const xhr = weatherReq.makeSourceWeatherRequest(source);
     weatherReq.sendWeatherRequest(xhr, function (xhr) {
             const state = weatherReq.getWeatherStateFromResponse(xhr.responseText);
-            col.findOne({cityId: state.cityId}, function(err, result){
+            col.findOne({cityId: state.cityId}, function(err, result) {
                 if (toAdd) {
                     addFavourite(col, state, res, err, result, client);
                 } else {
@@ -74,6 +70,12 @@ function favouriteCityRespond(source, res, toAdd) {
         function (xhr) {
             res.sendStatus(429);
         });
+}
+
+async function getFavouriteCitiesRespond(res) {
+    col.find().toArray(function(err, result) {
+        res.send(result);
+    });
 }
 
 app.get("/weather/city", function(req, res){
@@ -99,4 +101,8 @@ app.delete("/weather/favourites", function(req, res){
     const cityName = req.query.cityName;
     const source = {byCity: true, cityName: cityName};
     favouriteCityRespond(source, res, false);
+});
+
+app.get("/weather/favourites", function(req, res){
+    getFavouriteCitiesRespond(res);
 });
