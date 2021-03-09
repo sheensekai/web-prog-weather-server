@@ -1,9 +1,10 @@
 module.exports = {
     makeWeatherRequest: function(params, async = true) {
         const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-        const url = "https://community-open-weather-map.p.rapidapi.com/weather" + params + "&units=metric" + "&lang=ru";
+        const url = "https://community-open-weather-map.p.rapidapi.com/weather" + params + "&units=metric";
+		//  + "&lang=ru";
         const xhr = new XMLHttpRequest();
-        const api_key = "34e35a1d80msh1acf606c8def3adp132cbbjsn7f1eb5c439c4";
+        const api_key = "76e83c9996msh3301669dd80d319p145896jsn558cf76c2a22";
         const host = "community-open-weather-map.p.rapidapi.com";
         const method = "GET";
 
@@ -19,7 +20,7 @@ module.exports = {
         return this.makeWeatherRequest(params);
     },
 
-    makeCityWeatherRequest: function(cityName, func) {
+    makeCityWeatherRequest: function(cityName) {
         const params = "?" + "q" + "=" + cityName;
         return this.makeWeatherRequest(params);
     },

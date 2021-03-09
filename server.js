@@ -1,8 +1,11 @@
 const express = require("express");
+const cors = require('cors');
 const weatherReq = require("./weather_req");
 
 const app = express();
 app.listen(3000);
+app.use(cors());
+app.options('*', cors());
 
 const MongoClient = require("mongodb").MongoClient;
 const mongoClient = new MongoClient("mongodb://localhost:27017");
@@ -72,10 +75,31 @@ function favouriteCityRespond(source, res, toAdd) {
         });
 }
 
-async function getFavouriteCitiesRespond(res) {
-    col.find().toArray(function(err, result) {
-        res.send(result);
-    });
+function getFavouriteCitiesRespond(res, cityName = null) {
+    if (cityName != null) {
+        col.findOne({cityName: cityName}, function(err, result) {
+            if (result === null) {
+                res.sendStatus(404);
+            } else {
+                const xhr = weatherReq.makeCityWeatherRequest(cityName);
+                weatherReq.sendWeatherRequest(xhr, function (xhr) {
+                        const state = weatherReq.getWeatherStateFromResponse(xhr.responseText);
+                        col.replaceOne({cityName: cityName}, state);
+                        res.send([state]);
+                    },
+                    function (xhr) {
+                        res.sendStatus(404);
+                    },
+                    function (xhr) {
+                        res.sendStatus(429);
+                    });
+            }
+        });
+    } else {
+        col.find().toArray(function(err, result) {
+            res.send(result);
+        });
+    }
 }
 
 app.get("/weather/city", function(req, res){
@@ -104,5 +128,5 @@ app.delete("/weather/favourites", function(req, res){
 });
 
 app.get("/weather/favourites", function(req, res){
-    getFavouriteCitiesRespond(res);
+    getFavouriteCitiesRespond(res, req.query.cityName);
 });
