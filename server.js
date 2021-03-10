@@ -1,14 +1,16 @@
 const express = require("express");
 const cors = require('cors');
 const weatherReq = require("./weather_req");
+require('dotenv').config();
 
 const app = express();
-app.listen(3000);
+const port = process.env.PORT || 3000;
+app.listen(port);
 app.use(cors());
 app.options('*', cors());
 
 const MongoClient = require("mongodb").MongoClient;
-const mongoClient = new MongoClient("mongodb://localhost:27017");
+const mongoClient = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost/my-nodejs-weather-server');
 const dbName = "weather";
 const collectionName = "favourites";
 let db, col, client;
