@@ -1,53 +1,54 @@
 module.exports = {
-    makeWeatherRequest: function(params, async = true) {
-        const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+    makeWeatherRequest: function(params, func, errFunc = null) {
+        const fetch = require("node-fetch");
         const url = "https://community-open-weather-map.p.rapidapi.com/weather" + params + "&units=metric";
 		//  + "&lang=ru";
-        const xhr = new XMLHttpRequest();
         const api_key = "76e83c9996msh3301669dd80d319p145896jsn558cf76c2a22";
         const host = "community-open-weather-map.p.rapidapi.com";
         const method = "GET";
 
-        xhr.responseType = "json";
-        xhr.open(method, url, async);
-        xhr.setRequestHeader("x-rapidapi-key", api_key);
-        xhr.setRequestHeader("x-rapidapi-host", host);
-        return xhr;
-    },
-
-    makeCoordsWeatherRequest: function(latitude, longitude) {
-        const params = "?" + "lat" + "=" + latitude + "&" + "lon" + "=" + longitude;
-        return this.makeWeatherRequest(params);
-    },
-
-    makeCityWeatherRequest: function(cityName) {
-        const params = "?" + "q" + "=" + cityName;
-        return this.makeWeatherRequest(params);
-    },
-
-    makeSourceWeatherRequest: function(source) {
-        if (source.byCity) {
-            return this.makeCityWeatherRequest(source.cityName);
-        } else {
-            return this.makeCoordsWeatherRequest(source.latitude, source.longitude);
-        }
-    },
-
-    sendWeatherRequest: function(xhr, func, failFunc = null, tooManyReqFunc = null) {
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200 && func != null) {
-                    func(xhr);
-                }
-                if (xhr.status === 404 && failFunc != null) {
-                    failFunc(xhr);
-                }
-                if (xhr.status === 429 && tooManyReqFunc != null) {
-                    tooManyReqFunc(xhr);
-                }
+        fetch(url, {
+            "method": method,
+            "headers" : {
+                "x-rapidapi-key": api_key,
+                "x-rapidapi-host": host
             }
+        }).then((response) => func(response))
+            .catch(function(err) {
+                if (errFunc !== null) {
+                    errFunc(err);
+                }
+            })
+    },
+
+    makeCoordsWeatherRequest: function(latitude, longitude, func, errFunc = null) {
+        const params = "?" + "lat" + "=" + latitude + "&" + "lon" + "=" + longitude;
+        this.makeWeatherRequest(params, func, errFunc);
+    },
+
+    makeCityWeatherRequest: function(cityName, func, errFunc = null) {
+        const params = "?" + "q" + "=" + cityName;
+        this.makeWeatherRequest(params, func, errFunc);
+    },
+
+    makeSourceWeatherRequest: function(source, func, errFunc = null) {
+        if (source.byCity) {
+            return this.makeCityWeatherRequest(source.cityName, func, errFunc);
+        } else {
+            return this.makeCoordsWeatherRequest(source.latitude, source.longitude, func, errFunc);
         }
-        xhr.send();
+    },
+
+    processResponse: function(response, func, failFunc = null, tooManyReqFunc = null) {
+        if (response.status === 200 && func != null) {
+            func(response);
+        }
+        if (response.status === 404 && failFunc != null) {
+            failFunc(response);
+        }
+        if (response.status === 429 && tooManyReqFunc != null) {
+            tooManyReqFunc(response);
+        }
     },
 
     getWeatherStateFromResponse: function(responseText) {

@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require("express");
 const cors = require('cors');
 const weatherReq = require("./weather_req");
+const fetch = require("node-fetch");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -10,7 +11,8 @@ app.use(cors());
 app.options('*', cors());
 
 const MongoClient = require("mongodb").MongoClient;
-const mongoClient = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost/my-nodejs-weather-server');
+const mongoDbUrl = "mongodb+srv://sheensekai:continious@cluster0.iiysk.mongodb.net/weather?retryWrites=true&w=majority";
+const mongoClient = new MongoClient(mongoDbUrl || 'mongodb://localhost/my-nodejs-weather-server');
 const dbName = "weather";
 const collectionName = "favourites";
 let db, col, client;
@@ -22,15 +24,20 @@ mongoClient.connect(function(err, dbClient){
 });
 
 function findCityRespond(source, res) {
-    const xhr = weatherReq.makeSourceWeatherRequest(source);
-    weatherReq.sendWeatherRequest(xhr, function (xhr) {
-            const state = weatherReq.getWeatherStateFromResponse(xhr.responseText);
-            res.send(state);
-        },
-        function (xhr) {
+    weatherReq.makeSourceWeatherRequest(source, (response) =>
+        weatherReq.processResponse(response,
+            function (response) {
+                response.text()
+                    .then(function (responseText) {
+                        const state = weatherReq.getWeatherStateFromResponse(responseText);
+                        res.send(state);
+                    })
+                    .catch(() => res.sendStatus(404));
+            }),
+        function (response) {
             res.sendStatus(404);
         },
-        function (xhr) {
+        function (response) {
             res.sendStatus(429);
         });
 }
@@ -58,23 +65,28 @@ function deleteFavourite(col, state, res, err, result) {
 }
 
 function favouriteCityRespond(source, res, toAdd) {
-    const xhr = weatherReq.makeSourceWeatherRequest(source);
-    weatherReq.sendWeatherRequest(xhr, function (xhr) {
-            const state = weatherReq.getWeatherStateFromResponse(xhr.responseText);
-            col.findOne({cityId: state.cityId}, function(err, result) {
-                if (toAdd) {
-                    addFavourite(col, state, res, err, result, client);
-                } else {
-                    deleteFavourite(col, state, res, err, result, client);
-                }
-            });
-        },
-        function (xhr) {
-            res.sendStatus(404);
-        },
-        function (xhr) {
-            res.sendStatus(429);
-        });
+    weatherReq.makeSourceWeatherRequest(source, (response) =>
+        weatherReq.processResponse(response, function (response) {
+                response.text()
+                    .then(function (responseText) {
+                        const state = weatherReq.getWeatherStateFromResponse(responseText);
+                        col.findOne({cityId: state.cityId}, function(err, result) {
+                            if (toAdd) {
+                                addFavourite(col, state, res, err, result, client);
+                            } else {
+                                deleteFavourite(col, state, res, err, result, client);
+                            }
+                        });
+                    })
+                    .catch(res.sendStatus(404));
+            },
+            function (response) {
+                res.sendStatus(404);
+            },
+            function (response) {
+                res.sendStatus(429);
+            }));
+
 }
 
 function getFavouriteCitiesRespond(res, cityName = null) {
@@ -83,18 +95,21 @@ function getFavouriteCitiesRespond(res, cityName = null) {
             if (result === null) {
                 res.sendStatus(404);
             } else {
-                const xhr = weatherReq.makeCityWeatherRequest(cityName);
-                weatherReq.sendWeatherRequest(xhr, function (xhr) {
-                        const state = weatherReq.getWeatherStateFromResponse(xhr.responseText);
-                        col.replaceOne({cityName: cityName}, state);
-                        res.send([state]);
-                    },
-                    function (xhr) {
-                        res.sendStatus(404);
-                    },
-                    function (xhr) {
-                        res.sendStatus(429);
-                    });
+                weatherReq.makeCityWeatherRequest(cityName, (response) =>
+                    weatherReq.processResponse(response, function (response) {
+                        response.text()
+                            .then(function (responseText) {
+                                const state = weatherReq.getWeatherStateFromResponse(responseText);
+                                col.replaceOne({cityName: cityName}, state);
+                                res.send([state]);
+                            }).catch(() => res.sendStatus(404));
+                        },
+                        function (response) {
+                            res.sendStatus(404);
+                        },
+                        function (response) {
+                            res.sendStatus(429);
+                        }));
             }
         });
     } else {
