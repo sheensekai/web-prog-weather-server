@@ -11,8 +11,7 @@ app.use(cors());
 app.options('*', cors());
 
 const MongoClient = require("mongodb").MongoClient;
-const mongoDbUrl = "mongodb+srv://sheensekai:continious@cluster0.iiysk.mongodb.net/weather?retryWrites=true&w=majority";
-const mongoClient = new MongoClient(mongoDbUrl || 'mongodb://localhost/my-nodejs-weather-server');
+const mongoClient = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost/my-nodejs-weather-server');
 const dbName = "weather";
 const collectionName = "favourites";
 let db, col, client;
@@ -78,7 +77,7 @@ function favouriteCityRespond(source, res, toAdd) {
                             }
                         });
                     })
-                    .catch(res.sendStatus(404));
+                    .catch(() => res.sendStatus(404));
             },
             function (response) {
                 res.sendStatus(404);
