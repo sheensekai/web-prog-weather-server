@@ -14,11 +14,15 @@ const MongoClient = require("mongodb").MongoClient;
 const mongoClient = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost/my-nodejs-weather-server');
 const dbName = "weather";
 const collectionName = "favourites";
-let db, col, client;
+let db, col, client, timeCol;
+
+// 10 minutes
+const timeBeforeUpdate = 1000 * 60 * 10;
 
 mongoClient.connect(function(err, dbClient){
     db = dbClient.db(dbName);
     col = db.collection(collectionName);
+    timeCol = db.collection("time");
     client = dbClient;
 });
 
@@ -85,10 +89,46 @@ function favouriteCityRespond(source, res, toAdd) {
             function (response) {
                 res.sendStatus(429);
             }));
-
 }
 
-function getFavouriteCitiesRespond(res, cityName = null) {
+async function updateCities(cityStates) {
+    for (let cityState of cityStates) {
+        console.log("current state:");
+        console.log(cityState);
+        const cityName = cityState.cityName;
+        await weatherReq.makeCityWeatherRequest(cityName, (response) =>
+            weatherReq.processResponse(response, async function (response) {
+                const responseText = await response.text();
+                const state = weatherReq.getWeatherStateFromResponse(responseText);
+                console.log("found state:");
+                console.log(state);
+                await col.deleteOne(cityState);
+                await col.insertOne(state);
+                },
+                function (response) {
+                },
+                function (response) {
+                }));
+    }
+    const newUpdateTime = {lastUpdateTime: new Date()};
+    await timeCol.replaceOne({}, newUpdateTime);
+}
+
+async function checkIfNeedToUpdate() {
+    const result = await timeCol.findOne({});
+    const currTime = new Date();
+    const lastUpdateTime = result.lastUpdateTime;
+    const diff = currTime - lastUpdateTime;
+    return diff > timeBeforeUpdate;
+}
+
+async function getFavouriteCitiesRespond(res, cityName = null) {
+    let toUpdate = await checkIfNeedToUpdate();
+    if (toUpdate) {
+        const result = await col.find().toArray();
+        await updateCities(result);
+    }
+
     if (cityName != null) {
         col.findOne({cityName: cityName}, function(err, result) {
             if (result === null) {

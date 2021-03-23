@@ -1,5 +1,5 @@
 module.exports = {
-    makeWeatherRequest: function(params, func, errFunc = null) {
+    makeWeatherRequest: async function(params, func, errFunc = null) {
         const fetch = require("node-fetch");
         const url = "https://community-open-weather-map.p.rapidapi.com/weather" + params + "&units=metric";
 		//  + "&lang=ru";
@@ -7,31 +7,26 @@ module.exports = {
         const host = "community-open-weather-map.p.rapidapi.com";
         const method = "GET";
 
-        fetch(url, {
+        const response = await fetch(url, {
             "method": method,
             "headers" : {
                 "x-rapidapi-key": api_key,
                 "x-rapidapi-host": host
-            }
-        }).then((response) => func(response))
-            .catch(function(err) {
-                if (errFunc !== null) {
-                    errFunc(err);
-                }
-            })
+            }});
+        await func(response);
     },
 
-    makeCoordsWeatherRequest: function(latitude, longitude, func, errFunc = null) {
+    makeCoordsWeatherRequest: async function(latitude, longitude, func, errFunc = null) {
         const params = "?" + "lat" + "=" + latitude + "&" + "lon" + "=" + longitude;
-        this.makeWeatherRequest(params, func, errFunc);
+        await this.makeWeatherRequest(params, func, errFunc);
     },
 
-    makeCityWeatherRequest: function(cityName, func, errFunc = null) {
+    makeCityWeatherRequest: async function(cityName, func, errFunc = null) {
         const params = "?" + "q" + "=" + cityName;
-        this.makeWeatherRequest(params, func, errFunc);
+        await this.makeWeatherRequest(params, func, errFunc);
     },
 
-    makeSourceWeatherRequest: function(source, func, errFunc = null) {
+    makeSourceWeatherRequest: async function(source, func, errFunc = null) {
         if (source.byCity) {
             return this.makeCityWeatherRequest(source.cityName, func, errFunc);
         } else {
@@ -39,15 +34,15 @@ module.exports = {
         }
     },
 
-    processResponse: function(response, func, failFunc = null, tooManyReqFunc = null) {
+    processResponse: async function(response, func, failFunc = null, tooManyReqFunc = null) {
         if (response.status === 200 && func != null) {
-            func(response);
+            await func(response);
         }
         if (response.status === 404 && failFunc != null) {
-            failFunc(response);
+            await failFunc(response);
         }
         if (response.status === 429 && tooManyReqFunc != null) {
-            tooManyReqFunc(response);
+            await tooManyReqFunc(response);
         }
     },
 
