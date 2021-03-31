@@ -1,69 +1,56 @@
 module.exports = {
-    makeWeatherRequest: async function(params, func, errFunc = null) {
+    sendWeatherRequest: async function (params) {
         const fetch = require("node-fetch");
         const url = "https://community-open-weather-map.p.rapidapi.com/weather" + params + "&units=metric";
-		//  + "&lang=ru";
         const api_key = "76e83c9996msh3301669dd80d319p145896jsn558cf76c2a22";
         const host = "community-open-weather-map.p.rapidapi.com";
         const method = "GET";
 
-        const response = await fetch(url, {
+        return await fetch(url, {
             "method": method,
-            "headers" : {
+            "headers": {
                 "x-rapidapi-key": api_key,
                 "x-rapidapi-host": host
-            }});
-        await func(response);
+            }
+        });
     },
 
-    makeCoordsWeatherRequest: async function(latitude, longitude, func, errFunc = null) {
+    getWeatherState: async function (params) {
+        const response = await this.sendWeatherRequest(params);
+        let weatherState = null;
+        if (response.status === 200) {
+            const jsonResponse = await response.json();
+            weatherState = this.getWeatherStateFromResponse(jsonResponse);
+
+        }
+        return {status: response.status, weatherState: weatherState};
+    },
+
+    getWeatherStateByCoords: async function (latitude, longitude) {
         const params = "?" + "lat" + "=" + latitude + "&" + "lon" + "=" + longitude;
-        await this.makeWeatherRequest(params, func, errFunc);
+        return await this.getWeatherState(params);
     },
 
-    makeCityWeatherRequest: async function(cityName, func, errFunc = null) {
+    getWeatherStateByCityName: async function (cityName) {
         const params = "?" + "q" + "=" + cityName;
-        await this.makeWeatherRequest(params, func, errFunc);
+        return await this.getWeatherState(params);
     },
 
-    makeSourceWeatherRequest: async function(source, func, errFunc = null) {
-        if (source.byCity) {
-            return this.makeCityWeatherRequest(source.cityName, func, errFunc);
-        } else {
-            return this.makeCoordsWeatherRequest(source.latitude, source.longitude, func, errFunc);
-        }
-    },
-
-    processResponse: async function(response, func, failFunc = null, tooManyReqFunc = null) {
-        if (response.status === 200 && func != null) {
-            await func(response);
-        }
-        if (response.status === 404 && failFunc != null) {
-            await failFunc(response);
-        }
-        if (response.status === 429 && tooManyReqFunc != null) {
-            await tooManyReqFunc(response);
-        }
-    },
-
-    getWeatherStateFromResponse: function(responseText) {
-        const response = JSON.parse(responseText);
-        if (response === null) {
-            return null;
-        }
+    getWeatherStateFromResponse: function (jsonResponse) {
         return {
-            "cityId": response.id,
-            "cityName": response.name,
-            "temp": Math.round(response.main.temp * 10) / 10,
-            "feels_like": response.main.feels_like,
-            "wind": response.wind.speed,
-            "clouds": response.clouds.all,
-            "pressure": response.main.pressure,
-            "humidity": response.main.humidity,
-            "iconId": response.weather[0].icon
+            "cityId": jsonResponse.id,
+            "cityName": jsonResponse.name,
+            "temp": Math.round(jsonResponse.main.temp * 10) / 10,
+            "feels_like": jsonResponse.main.feels_like,
+            "wind": jsonResponse.wind.speed,
+            "clouds": jsonResponse.clouds.all,
+            "pressure": jsonResponse.main.pressure,
+            "humidity": jsonResponse.main.humidity,
+            "iconId": jsonResponse.weather[0].icon
         };
     }
 }
+
 
 
 
