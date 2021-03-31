@@ -38,6 +38,7 @@ function sendResult(result, res) {
 
 app.get("/weather/city", async function(req, res){
     const cityName = (req.query.hasOwnProperty("cityName") ? req.query.cityName : null);
+    console.log(cityName);
     const result = await service.getCityByName(cityName);
     sendResult(result, res);
 });

@@ -1,7 +1,13 @@
 module.exports = {
     sendWeatherRequest: async function (params) {
         const fetch = require("node-fetch");
-        const url = "https://community-open-weather-map.p.rapidapi.com/weather" + params + "&units=metric";
+        const url = new URL("https://community-open-weather-map.p.rapidapi.com/weather");
+        for (let name in params) {
+            url.searchParams.append(name, params[name]);
+        }
+        url.searchParams.append("units", "metric");
+        url.searchParams.append("lang", "ru");
+
         const api_key = "76e83c9996msh3301669dd80d319p145896jsn558cf76c2a22";
         const host = "community-open-weather-map.p.rapidapi.com";
         const method = "GET";
@@ -10,7 +16,7 @@ module.exports = {
             "method": method,
             "headers": {
                 "x-rapidapi-key": api_key,
-                "x-rapidapi-host": host
+                "x-rapidapi-host": host,
             }
         });
     },
@@ -27,12 +33,12 @@ module.exports = {
     },
 
     getWeatherStateByCoords: async function (latitude, longitude) {
-        const params = "?" + "lat" + "=" + latitude + "&" + "lon" + "=" + longitude;
+        const params = {lat: latitude, lon: longitude};
         return await this.getWeatherState(params);
     },
 
     getWeatherStateByCityName: async function (cityName) {
-        const params = "?" + "q" + "=" + cityName;
+        const params = {q: cityName};
         return await this.getWeatherState(params);
     },
 
