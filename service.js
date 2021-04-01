@@ -71,15 +71,16 @@ module.exports = {
             return this.makeBadResult();
         }
 
-        const currentWeatherState = await col.findOne({cityName: cityName});
         const result = await weatherReq.getWeatherStateByCityName(cityName);
         if (result.status !== 200) {
             return this.makeResult(result.status, null);
         } else {
+            const weatherState = result.weatherState;
+            const cityName = weatherState.cityName;
+            const currentWeatherState = await col.findOne({cityName: cityName});
             if (currentWeatherState !== null) {
                 await col.deleteOne(currentWeatherState);
             }
-            const weatherState = result.weatherState;
             await col.insertOne(weatherState);
             return this.makeResult(200, weatherState);
         }
