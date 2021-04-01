@@ -8,7 +8,7 @@ module.exports = {
         url.searchParams.append("units", "metric");
         url.searchParams.append("lang", "ru");
 
-        const api_key = "76e83c9996msh3301669dd80d319p145896jsn558cf76c2a22";
+        const api_key = "2fdf407678msh3c7c90482d0c387p1a9b91jsnef08555180a9";
         const host = "community-open-weather-map.p.rapidapi.com";
         const method = "GET";
 
