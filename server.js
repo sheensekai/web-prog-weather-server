@@ -15,7 +15,7 @@ const dbName = "weather";
 const collectionName = "favourites";
 let db, col, client, timeCol;
 
-mongoClient.connect(function(err, dbClient){
+mongoClient.connect(function(err, dbClient) {
     db = dbClient.db(dbName);
     col = db.collection(collectionName);
     timeCol = db.collection("time");

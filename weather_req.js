@@ -1,23 +1,23 @@
+const fetch = require("node-fetch");
+const hostUrl = process.env.HOST_URL;
+const weatherApiKey = process.env.WEATHER_API_KEY;
+const baseUrl = process.env.WEATHER_BASE_URL;
+const weatherReqHeaders = {
+    "x-rapidapi-key": hostUrl,
+    "x-rapidapi-host": weatherApiKey
+};
+
 module.exports = {
     sendWeatherRequest: async function (params) {
-        const fetch = require("node-fetch");
-        const url = new URL("https://community-open-weather-map.p.rapidapi.com/weather");
+        const url = new URL(baseUrl);
         for (let name in params) {
             url.searchParams.append(name, params[name]);
         }
         url.searchParams.append("units", "metric");
         url.searchParams.append("lang", "ru");
 
-        const api_key = "2fdf407678msh3c7c90482d0c387p1a9b91jsnef08555180a9";
-        const host = "community-open-weather-map.p.rapidapi.com";
-        const method = "GET";
-
         return await fetch(url, {
-            "method": method,
-            "headers": {
-                "x-rapidapi-key": api_key,
-                "x-rapidapi-host": host,
-            }
+            headers: weatherReqHeaders
         });
     },
 
