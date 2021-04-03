@@ -54,7 +54,8 @@ module.exports = {
             "clouds": jsonResponse.clouds.all,
             "pressure": jsonResponse.main.pressure,
             "humidity": jsonResponse.main.humidity,
-            "iconId": jsonResponse.weather[0].icon
+            "iconId": jsonResponse.weather[0].icon,
+            "date" : new Date()
         };
     }
 }
