@@ -1,10 +1,12 @@
 const fetch = require("node-fetch");
+const error = require("./error");
+
 const hostUrl = process.env.HOST_URL;
 const weatherApiKey = process.env.WEATHER_API_KEY;
 const baseUrl = process.env.WEATHER_BASE_URL;
 const weatherReqHeaders = {
-    "x-rapidapi-key": hostUrl,
-    "x-rapidapi-host": weatherApiKey
+    "x-rapidapi-key": weatherApiKey,
+    "x-rapidapi-host": hostUrl
 };
 
 module.exports = {
@@ -23,13 +25,13 @@ module.exports = {
 
     getWeatherState: async function (params) {
         const response = await this.sendWeatherRequest(params);
-        let weatherState = null;
-        if (response.status === 200) {
-            const jsonResponse = await response.json();
-            weatherState = this.getWeatherStateFromResponse(jsonResponse);
-
+        const status = response.status;
+        if (status !== 200) {
+            error.makeError(status);
         }
-        return {status: response.status, weatherState: weatherState};
+
+        const jsonResponse = await response.json();
+        return this.getWeatherStateFromResponse(jsonResponse);
     },
 
     getWeatherStateByCoords: async function (latitude, longitude) {
