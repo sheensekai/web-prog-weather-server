@@ -61,7 +61,7 @@ module.exports = {
 
     replaceFavWeatherState: async function(oldWeatherState, newWeatherState) {
         try {
-            await this.getWeatherStateAssert(oldWeatherState);
+            await this.getWeatherStateAssert(oldWeatherState.cityName);
             await col.replaceOne(oldWeatherState, newWeatherState);
             return newWeatherState;
         } catch (e) {

@@ -25,6 +25,7 @@ module.exports = {
 
     getWeatherState: async function (params) {
         const response = await this.sendWeatherRequest(params);
+        console.log(response);
         const status = response.status;
         if (status !== 200) {
             error.makeError(status);
